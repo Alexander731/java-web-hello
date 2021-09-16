@@ -2,7 +2,7 @@ pipeline {
   agent any
   environment {
     registryCredential = 'MyDockerHubCreds'
-	registry = "semigr/goappsrepo"
+	registry = "semigr/javawebhello"
   }
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -10,7 +10,7 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        sh 'docker build -t $registry + ":latest" .'
+        sh 'docker build -t "$registry:latest" .'
       }
     }
     stage('Publish') {
@@ -36,11 +36,6 @@ pipeline {
                 sh "source /var/lib/jenkins/.bash_profile > /dev/null && kubectl apply -f service.yml"
             }
         }
-    }
-  }
-  post {
-    always {
-      sh 'docker logout'
     }
   }
 }
