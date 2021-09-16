@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-hello-svc
+  annotations:
+    # Note that the backend talks over HTTP.
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    # My certificate
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:466996345163:certificate/b2a10b0b-b68a-49e5-a9c5-3fcb163a8661
+    # Only run SSL on the port named "https" below.
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+spec:
+  selector:
+    role: java-app
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8080
+  type: LoadBalancer

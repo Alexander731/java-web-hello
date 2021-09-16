@@ -1,39 +1,41 @@
 pipeline {
-  agent { label 'linux' }
+  agent any
+  environment {
+    registryCredential = 'MyDockerHubCreds'
+	registry = "semigr/goappsrepo"
+  }
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
-  }
-  environment {
-    HEROKU_API_KEY = credentials('darinpope-heroku-api-key')
-  }
-  parameters { 
-    string(name: 'APP_NAME', defaultValue: '', description: 'What is the Heroku app name?') 
   }
   stages {
     stage('Build') {
       steps {
-        sh 'docker build -t darinpope/java-web-app:latest .'
+        sh 'docker build -t $registry + ":latest" .'
       }
     }
-    stage('Login') {
-      steps {
-        sh 'echo $HEROKU_API_KEY | docker login --username=_ --password-stdin registry.heroku.com'
-      }
+    stage('Publish') {
+        environment {
+            registryCredential = 'MyDockerHubCreds'
+        }
+        steps{
+            script {
+                def appimage = docker.build registry + ":$BUILD_NUMBER"
+                docker.withRegistry( '', registryCredential ) {
+                    appimage.push()
+                    appimage.push('latest')
+                }
+            }
+        }
     }
-    stage('Push to Heroku registry') {
-      steps {
-        sh '''
-          docker tag darinpope/java-web-app:latest registry.heroku.com/$APP_NAME/web
-          docker push registry.heroku.com/$APP_NAME/web
-        '''
-      }
-    }
-    stage('Release the image') {
-      steps {
-        sh '''
-          heroku container:release web --app=$APP_NAME
-        '''
-      }
+    stage ('Deploy') {
+        steps {
+            script{
+                def image_id = registry + ":$BUILD_NUMBER"
+				sh "sed -i s#JUSTIMAGEPLACEHOLDER#${image_id}#g deployment.yml"
+	            sh "source /var/lib/jenkins/.bash_profile > /dev/null && kubectl apply -f deployment.yml"
+                sh "source /var/lib/jenkins/.bash_profile > /dev/null && kubectl apply -f service.yml"
+            }
+        }
     }
   }
   post {
