@@ -1,2 +1,3 @@
-# java-web-hello
-Just a simple Java Web application
+# java-web-app
+
+modify README
