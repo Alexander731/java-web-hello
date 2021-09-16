@@ -1,3 +1,1 @@
-# java-web-app
-
-modify README
+Just a simple Java Web application
